@@ -143,6 +143,35 @@ def envuelve_tablas(cuerpo_html):
             .replace("</table>", "</table></div>"))
 
 
+# ===========================================================================
+# 19-11-2026 · ESTA DIRECCION ES UN ESPEJO, Y LO DICE.
+# Decision de Pedro: la casa es `taller.dantehef.dev`. Esta copia existe para
+# ensenarla sin tocar la buena, pero si Google la indexa compite con la otra y
+# reparte la fuerza entre dos. => se marca `noindex` y se declara la canonica
+# al dominio: el buscador ve la copia, la lee si quiere, y consolida en la casa.
+# ===========================================================================
+CASA = "https://taller.dantehef.dev"
+
+MARCAS_ESPEJO = ('<meta name="robots" content="noindex, follow">\n'
+                 '<link rel="canonical" href="%s/%s">')
+
+
+def marca_espejo():
+    """Mete el noindex y la canonica en cada pagina construida. Idempotente."""
+    tocadas = 0
+    for ruta in sorted(glob.glob(os.path.join(SITIO, "*.html"))):
+        pagina = open(ruta, encoding="utf-8").read()
+        if "marca-espejo" in pagina:
+            continue
+        nombre = os.path.basename(ruta)
+        destino = "" if nombre == "index.html" else nombre
+        marcas = "<!-- marca-espejo -->\n" + MARCAS_ESPEJO % (CASA, destino)
+        pagina = pagina.replace("</head>", marcas + "\n</head>", 1)
+        open(ruta, "w", encoding="utf-8").write(pagina)
+        tocadas += 1
+    print("  OK espejo marcado: noindex + canonica a %s en %d paginas" % (CASA, tocadas))
+
+
 def main():
     os.makedirs(SITIO, exist_ok=True)
     css = open(CSS, encoding="utf-8").read()
@@ -231,6 +260,9 @@ def main():
     if os.path.exists(cname):
         os.remove(cname)
     print("  ✅ sin CNAME: vive en github.io")
+
+    # y que se declare espejo: la casa es taller.dantehef.dev
+    marca_espejo()
 
 
 if __name__ == "__main__":
