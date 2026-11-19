@@ -1,0 +1,73 @@
+# PARA PEGAR EN r/LocalLLaMA
+
+## TÍTULO (campo "Title")
+
+```
+Ollama silently truncates your document at 65,536 tokens — and the model tells you it read the whole thing
+```
+
+## CUERPO (campo "Text")
+
+```
+I fed a model a 300,000-character document, then a 600,000-character one. **Both times it read exactly 65,538 tokens.** And both times it answered as if it had read everything.
+
+## How I noticed
+
+I asked it to find a fact I had deliberately placed **in the last line** of a long document. It answered confidently. The fact was not in its answer. So I asked about something from the beginning: correct. Something from the end: made up.
+
+Then I counted the tokens it had actually read.
+
+## The number
+
+| what I sent | what it read |
+|---|---|
+| 300,000 characters | **65,538 tokens** |
+| 600,000 characters | **65,538 tokens** |
+
+Same exact number both times. That's not a coincidence, it's a ceiling. Ollama cuts at 65,536 tokens (the rest is template) — and says nothing. No warning, no error, nothing in the log.
+
+**And here is the part that rules out the obvious answer:** the configured context window was **147,456 tokens**. It read **65,538**. So the model had room for more than double what it got. It is not the model's limit, nor the card's — it is a cut below its own limit.
+
+And `done_reason` came back **`stop`**, not `length`. It does not declare the cut. It says it finished.
+
+## Why this is worse than an error
+
+An error is visible. This isn't.
+
+The model doesn't know the document was cut. It sees text that starts fine and ends mid-sentence, and it does what it's trained to do: answer. And because models are trained to be helpful, they fill the gap with what the document probably said — which looks exactly like a correct answer.
+
+The bug isn't in the model. It's that nobody tells you the model didn't read what you think it read.
+
+## How to check it on your machine (two minutes)
+
+1. Take a long document, over 100,000 tokens.
+2. Put an odd sentence at the end, like *"the secret word is MARMOLINA"*.
+3. Ask about it.
+4. Check how many tokens `usage` says it read.
+
+If you get a round number that is always the same, that's it.
+
+## What I don't know
+
+- **I don't know if this happens in every version** of ollama. I measured it on mine, with one model, and haven't tested others.
+- **I don't know if it's deliberate** (a safety limit) or an oversight. The docs didn't say where I looked.
+- **I haven't checked whether the OpenAI server does the same.** I can only speak about what I measured.
+
+## The question
+
+Has anyone else hit this? I'm especially interested in long documents where you didn't notice — because that would mean people are making decisions on answers built from a document the model never fully read.
+
+---
+
+*Full numbers, the results file and the exact command to reproduce it are on [El Taller](https://taller.dantehef.dev).*
+```
+
+## ETIQUETA / FLAIR
+
+Si te deja elegir, pon **`Discussion`** o **`Tutorial | Guide`**. **No pongas nada que suene a producto.**
+
+## ANTES DE DARLE A PUBLICAR
+
+- **Mira que el título NO lleve el enlace dentro** (Reddit lo penaliza).
+- **El enlace va al final del cuerpo**, como está.
+- **Y quédate un rato por allí**: si contestan, contesta. Es la diferencia entre un vecino y un vendedor.

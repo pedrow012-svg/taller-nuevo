@@ -1,0 +1,1 @@
+Silent truncation at 65,536 tokens: 600k chars in, 65,538 tokens read, done_reason=stop, context window was 147,456

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El Taller · pruebas de modelos de lenguaje sobre máquina casera</title>
+<meta name="description" content="Pruebas de modelos de lenguaje sobre máquina casera. Datos públicos y contrastables.">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   ENTRADA · una sola pantalla, limpia.
+   Paleta del Panel DanteHef: negro #0a0a0a y cian neón #00f2ff, con brillo.
+   Sin JavaScript. La imagen es CC0 (Pixabay, vía Wikimedia Commons).
+   ═══════════════════════════════════════════════════════════════════ */
+:root{
+  --negro:#0a0a0a;
+  --negro2:#0d0d0d;
+  --cian:#00f2ff;
+  --cian-tenue:#00d4e6;
+  --tinta:#eaf6f8;
+  --gris:#8ea3a8;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --texto:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--negro); color:var(--tinta); font:17px/1.6 var(--texto);
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+
+/* ── el fondo: la imagen, oscurecida, y encima la luz de la casa ── */
+.fondo{position:fixed; inset:0; z-index:0}
+.fondo picture,.fondo img{width:100%; height:100%; object-fit:cover; display:block}
+.fondo::after{
+  content:""; position:absolute; inset:0;
+  background:
+    radial-gradient(58% 52% at 50% 44%, rgba(10,10,10,.12), rgba(10,10,10,.80) 74%),
+    linear-gradient(180deg, rgba(10,10,10,.88), rgba(10,10,10,.45) 38%, rgba(10,10,10,.94));
+}
+/* las estrellas del panel: puntos de cian que titilan, sin un solo script */
+.estrellas{
+  position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.55;
+  background-image:
+    radial-gradient(2px 2px at 12% 22%, rgba(0,242,255,.55), transparent),
+    radial-gradient(1px 1px at 28% 68%, rgba(0,242,255,.5), transparent),
+    radial-gradient(2px 2px at 44% 12%, rgba(0,242,255,.45), transparent),
+    radial-gradient(1px 1px at 61% 82%, rgba(0,242,255,.4), transparent),
+    radial-gradient(2px 2px at 76% 34%, rgba(0,242,255,.5), transparent),
+    radial-gradient(1px 1px at 88% 62%, rgba(0,242,255,.35), transparent),
+    radial-gradient(1px 1px at 54% 48%, rgba(255,255,255,.25), transparent),
+    radial-gradient(1px 1px at 8% 84%, rgba(255,255,255,.2), transparent);
+  animation:titila 9s ease-in-out infinite alternate;
+}
+@keyframes titila{from{opacity:.35}to{opacity:.75}}
+
+/* ── la pantalla: centrada y con aire ── */
+.pantalla{
+  position:relative; z-index:2; min-height:100%; display:grid; place-items:center;
+  padding:clamp(1.5rem,5vw,4rem); text-align:center;
+}
+.centro{max-width:46rem}
+
+.marca{
+  font-family:var(--texto); font-weight:300; letter-spacing:.42em; text-transform:uppercase;
+  font-size:clamp(1.9rem,7vw,4.2rem); margin:0; line-height:1.05;
+  text-shadow:0 0 26px rgba(0,242,255,.35), 0 0 70px rgba(0,242,255,.18);
+}
+.marca b{font-weight:600; color:#fff; letter-spacing:.3em}
+.raya{
+  width:clamp(4rem,12vw,9rem); height:2px; margin:1.4rem auto 1.5rem;
+  background:linear-gradient(90deg, transparent, var(--cian), transparent);
+  box-shadow:0 0 18px rgba(0,242,255,.8);
+}
+.lema{
+  font-size:clamp(1rem,2.1vw,1.28rem); color:var(--tinta); margin:0 auto 1.8rem; max-width:34rem;
+  font-weight:300; line-height:1.55;
+}
+.lema .fuerte{color:var(--cian); font-weight:500}
+
+.direccion{
+  margin:0 0 1.7rem; font-family:var(--mono); font-size:clamp(.72rem,1.5vw,.86rem);
+  letter-spacing:.26em; text-transform:uppercase; color:var(--cian-tenue);
+  text-shadow:0 0 16px rgba(0,242,255,.45);
+}
+.direccion a{color:inherit; text-decoration:none; border-bottom:1px solid rgba(0,242,255,.3)}
+.direccion a:hover{color:var(--cian)}
+.entrar{
+  display:inline-flex; align-items:center; gap:.8rem; text-decoration:none;
+  font-family:var(--mono); font-size:.86rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--negro); background:var(--cian); padding:1rem 2.1rem; border-radius:99px;
+  box-shadow:0 0 22px rgba(0,242,255,.55), 0 0 60px rgba(0,242,255,.28);
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.entrar:hover{transform:translateY(-2px); background:#5cf7ff; box-shadow:0 0 30px rgba(0,242,255,.8), 0 0 90px rgba(0,242,255,.4)}
+.entrar .flecha{transition:transform .18s ease}
+.entrar:hover .flecha{transform:translateX(4px)}
+
+.pie{
+  position:fixed; inset:auto 0 0 0; z-index:2; display:flex; gap:1rem; flex-wrap:wrap;
+  justify-content:space-between; padding:1rem clamp(1rem,4vw,2rem);
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.12em; text-transform:uppercase;
+  color:#5d7276;
+}
+.pie a{color:#7b9398; text-decoration:none; border-bottom:1px solid rgba(0,242,255,.25)}
+.pie a:hover{color:var(--cian)}
+
+/* en pantallas bajas (móvil apaisado) se reduce el aire, no el contenido */
+@media (max-height:560px){
+  .marca{font-size:1.7rem; letter-spacing:.3em}
+  .lema{font-size:.95rem; margin-bottom:1rem}
+  .entrar{padding:.75rem 1.5rem; font-size:.78rem}
+  .pie{font-size:.6rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="fondo">
+  <picture>
+    <source srcset="img/portada-ia.webp" type="image/webp">
+    <img src="img/portada-ia.jpg" alt="" aria-hidden="true">
+  </picture>
+</div>
+<div class="estrellas"></div>
+
+<main class="pantalla">
+  <div class="centro">
+    <h1 class="marca">El <b>Taller</b></h1>
+    <div class="raya"></div>
+    <p class="lema">Pruebas de modelos de lenguaje sobre <span class="fuerte">máquina casera</span>.<br>
+      Datos <span class="fuerte">públicos</span> y <span class="fuerte">contrastables</span>.</p>
+    <p class="direccion">taller.dantehef.dev</p>
+    <a class="entrar" href="temas.html">Entrar <span class="flecha">→</span></a>
+  </div>
+</main>
+
+<div class="pie">
+  <span><a href="https://taller.dantehef.dev">taller.dantehef.dev</a> · medido en casa, sin patrocinio</span>
+  <span>Imagen: <a href="https://commons.wikimedia.org/wiki/File:Artificial-Intelligence.jpg">Pixabay · CC0</a> · vía Wikimedia Commons</span>
+</div>
+
+</body>
+</html>

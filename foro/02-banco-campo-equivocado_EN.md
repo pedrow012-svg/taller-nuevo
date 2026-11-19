@@ -1,0 +1,58 @@
+I ran a quality test on 5 local models and scored one of them 6 out of 10. Then I looked at the actual responses: they were all there, perfect, in the wrong field.
+
+Here is the bug. My test script read:
+
+    message["content"]
+
+And the model was answering in:
+
+    message["reasoning_content"]
+
+Which is where reasoning models put their output when they run out of budget before emitting a final answer. So the field I was reading was empty — not because the model said nothing, but because I was looking at the wrong place.
+
+The test scored it as a failure. Four cases came back as "dijo None". The model had answered every single one.
+
+When I fixed the reader, the same model went from 6/10 to 8/10. Same model. Same cases. Same machine. One line of code.
+
+## Why I'm posting this
+
+Because this is my bug, not the model's, and I almost published a verdict based on it. If I had, I would have told anyone who read it that a perfectly good model was broken.
+
+And because it's the second time in one day. The first post was about ollama silently truncating a document — a tool that doesn't tell you what it didn't read. This is the same sin from the other side: a tool that doesn't tell you what the model did say.
+
+## The thing I did not expect
+
+Once I fixed it, I could see something I had been missing entirely: every single model that reasons failed the same 3 abstention cases. 0 out of 3, on all of them.
+
+Ask them something that has no answer:
+
+- "What is the population of Mars?"
+- "What was the revenue of this company in 2031?"
+- "Give me the exact figure from a document that doesn't contain one."
+
+They don't say "I don't know". They reason until they find something to answer, and then they answer.
+
+Two of them did something worse: they said "I don't know" **and then gave a made-up number in the same sentence.** *"I don't know, but it's about 47."*
+
+That is not honesty. That's an error wearing honesty's clothes, and it's harder to catch than a plain wrong number.
+
+## The practical bit
+
+If you're writing a test harness for models that reason, check both fields before you decide the model said nothing:
+
+    msg = response["choices"][0]["message"]
+    text = (msg.get("content") or msg.get("reasoning_content") or "").strip()
+
+And if you're reading someone else's benchmark numbers, ask yourself which field their harness reads. Mine read one. For months nobody noticed, because every model before this one answered in `content`.
+
+The models changed. My tool didn't. That's all this is.
+
+## What I don't know
+
+- I don't know if every provider puts chain-of-thought in `reasoning_content` — that's the field name I saw, and it's what the API doc for my setup says. Others may use `reasoning`, or something else entirely.
+- I don't know whether reading reasoning text as the answer is always correct. In my cases it was, because the model had already reached the conclusion and just ran out of room to restate it. But in a case where the reasoning contradicts itself, taking the last thing it said might not be the right answer.
+- I haven't checked whether the score would change again with a bigger token budget. Possibly the model would finish in `content` and the whole issue would disappear.
+
+---
+
+*Full numbers, the cases and the command to reproduce it are on [El Taller](https://taller.dantehef.dev).*

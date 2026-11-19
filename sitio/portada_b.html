@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El Taller · portada B (prueba de diseño)</title>
+<style>
+/* ── portada cinematográfica, tema oscuro fijo. Sin JS. Sin imágenes de fuera. ── */
+:root{
+  --noche:#0b0d10; --noche2:#11151b; --tinta:#f1f3f6; --tenue:#9aa4b2;
+  --ambar:#f0a63c; --ambar2:#c2410c; --linea:#222932;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --texto:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--noche);color:var(--tinta);font:17px/1.65 var(--texto);-webkit-font-smoothing:antialiased}
+
+/* grano fino encima de todo, para que el negro no sea plano */
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:60; opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── barra: fina, pegada, casi invisible hasta que bajas ── */
+nav{
+  position:fixed; inset:0 0 auto 0; z-index:50; display:flex; align-items:center; gap:1.4rem;
+  padding:.9rem clamp(1rem,4vw,2.4rem);
+  background:linear-gradient(180deg,rgba(11,13,16,.92),rgba(11,13,16,0));
+  backdrop-filter:blur(6px);
+}
+nav .marca{display:flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.82rem;letter-spacing:.22em;text-transform:uppercase}
+nav .sello{width:28px;height:28px;border-radius:8px;background:linear-gradient(145deg,var(--ambar),var(--ambar2));display:grid;place-items:center;color:#0b0d10;font-weight:800;font-size:.78rem;font-family:var(--mono)}
+nav .enlaces{margin-left:auto;display:flex;gap:1.3rem;align-items:center;font-size:.86rem}
+nav a{color:var(--tenue);text-decoration:none;transition:color .15s}
+nav a:hover{color:var(--tinta)}
+nav .boton{
+  color:#0b0d10;background:var(--ambar);padding:.5rem 1rem;border-radius:99px;font-weight:650;
+  box-shadow:0 6px 22px -10px var(--ambar);
+}
+nav .boton:hover{color:#0b0d10;filter:brightness(1.08)}
+
+/* ── el héroe ── */
+.heroe{
+  position:relative; min-height:100svh; display:grid; place-items:center;
+  padding:clamp(6rem,16vh,10rem) clamp(1.2rem,5vw,3rem) 4rem; overflow:hidden; text-align:center;
+}
+.heroe::before{      /* halos de color: la "iluminación" del fondo */
+  content:""; position:absolute; inset:-20% -10% auto -10%; height:120%;
+  background:
+    radial-gradient(48% 40% at 50% 18%, rgba(240,166,60,.17), transparent 70%),
+    radial-gradient(38% 34% at 18% 62%, rgba(194,65,12,.14), transparent 70%),
+    radial-gradient(42% 40% at 82% 40%, rgba(56,110,180,.13), transparent 72%),
+    linear-gradient(180deg, var(--noche2), var(--noche) 70%);
+}
+.heroe::after{       /* rejilla de banco de pruebas, muy tenue */
+  content:""; position:absolute; inset:0; opacity:.35;
+  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(60% 55% at 50% 40%,#000 40%,transparent 78%);
+}
+.heroe .dentro{position:relative; z-index:2; max-width:60rem}
+.ojo{
+  display:inline-flex; align-items:center; gap:.6rem; font-family:var(--mono);
+  font-size:.71rem; letter-spacing:.22em; text-transform:uppercase; color:var(--ambar);
+  border:1px solid rgba(240,166,60,.35); border-radius:99px; padding:.4rem .9rem;
+  background:rgba(240,166,60,.07); margin-bottom:1.6rem;
+}
+.ojo .punto{width:6px;height:6px;border-radius:50%;background:var(--ambar);box-shadow:0 0 10px var(--ambar)}
+h1{
+  font-family:var(--serif); font-weight:600; letter-spacing:-.025em; line-height:1.03;
+  font-size:clamp(2.3rem,7vw,5rem); margin:0 0 1.3rem;
+}
+h1 .cifra{
+  font-family:var(--mono); font-weight:700; letter-spacing:-.03em;
+  background:linear-gradient(180deg,#fff,var(--ambar)); -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.entrada{font-size:clamp(1rem,1.5vw,1.2rem); color:var(--tenue); max-width:42rem; margin:0 auto 2.2rem}
+
+/* el dibujo del héroe: la ventana y lo que de verdad se lee */
+.ventana{max-width:44rem; margin:0 auto 2.4rem}
+.ventana svg{width:100%;height:auto;display:block}
+
+.acciones{display:flex; gap:.8rem; justify-content:center; flex-wrap:wrap}
+.acciones a{
+  text-decoration:none; padding:.85rem 1.5rem; border-radius:99px; font-weight:650; font-size:.95rem;
+  transition:transform .15s, box-shadow .15s, background .15s;
+}
+.principal{color:#0b0d10; background:linear-gradient(180deg,#ffc266,var(--ambar)); box-shadow:0 10px 34px -14px var(--ambar)}
+.principal:hover{transform:translateY(-2px); box-shadow:0 16px 40px -14px var(--ambar)}
+.secundario{color:var(--tinta); border:1px solid var(--linea); background:rgba(255,255,255,.03)}
+.secundario:hover{border-color:var(--ambar); transform:translateY(-2px)}
+
+/* franja de datos */
+.franja{
+  display:flex; gap:clamp(1rem,4vw,3rem); justify-content:center; flex-wrap:wrap;
+  margin-top:3rem; padding-top:1.8rem; border-top:1px solid var(--linea);
+  font-family:var(--mono); font-size:.76rem; letter-spacing:.1em; text-transform:uppercase; color:var(--tenue);
+}
+.franja b{display:block; font-size:1.5rem; letter-spacing:-.02em; color:var(--tinta); font-family:var(--texto); text-transform:none; margin-bottom:.2rem}
+.franja b.ambar{color:var(--ambar)}
+
+/* ── sección de artículos ── */
+section{padding:clamp(3rem,8vh,6rem) clamp(1.2rem,5vw,3rem)}
+.cabeza-seccion{max-width:60rem;margin:0 auto 2.4rem;display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap}
+.cabeza-seccion h2{font-family:var(--serif);font-size:clamp(1.6rem,3vw,2.2rem);margin:0;letter-spacing:-.02em}
+.cabeza-seccion p{margin:0;color:var(--tenue);font-size:.95rem}
+.cabeza-seccion .mas{margin-left:auto;font-family:var(--mono);font-size:.78rem;color:var(--ambar);text-decoration:none}
+.rejilla{max-width:72rem;margin:0 auto;display:grid;gap:1rem;grid-template-columns:1fr}
+@media(min-width:52rem){.rejilla{grid-template-columns:1fr 1fr 1fr}}
+.tarjeta{
+  position:relative; display:flex; flex-direction:column; gap:.6rem; padding:1.5rem;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));
+  border:1px solid var(--linea); border-radius:18px;
+  transition:transform .18s, border-color .18s, background .18s;
+}
+.tarjeta:hover{transform:translateY(-3px); border-color:rgba(240,166,60,.55); background:linear-gradient(180deg,rgba(240,166,60,.10),rgba(255,255,255,.02))}
+.tarjeta .n{font-family:var(--mono);font-size:.72rem;color:var(--ambar);letter-spacing:.16em}
+.tarjeta h3{font-family:var(--serif);font-size:1.18rem;line-height:1.3;margin:0;letter-spacing:-.01em}
+.tarjeta h3 a{color:var(--tinta);text-decoration:none}
+.tarjeta h3 a::after{content:"";position:absolute;inset:0;border-radius:18px}
+.tarjeta p{margin:0;color:var(--tenue);font-size:.9rem;line-height:1.55}
+.tarjeta .pie{margin-top:auto;padding-top:.9rem;font-family:var(--mono);font-size:.71rem;color:#6f7885;letter-spacing:.06em;display:flex;gap:.8rem}
+
+footer{padding:3rem clamp(1.2rem,5vw,3rem) 4rem;color:#6f7885;font-size:.85rem;border-top:1px solid var(--linea)}
+footer .dentro{max-width:72rem;margin:0 auto;display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between}
+footer a{color:var(--tenue);text-decoration:none}
+footer a:hover{color:var(--ambar)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="marca"><span class="sello">ET</span> El Taller</span>
+  <span class="enlaces">
+    <a href="#articulos">Artículos</a>
+    <a href="#metodo">Método</a>
+    <a href="01-ollama-truncado-silencioso.html">Lo último</a>
+    <a class="boton" href="01-ollama-truncado-silencioso.html">Leer ahora</a>
+  </span>
+</nav>
+
+<header class="heroe">
+  <div class="dentro">
+    <p class="ojo"><span class="punto"></span> Cuaderno de medidas · sin patrocinio</p>
+    <h1>Le damos <span class="cifra">32.768</span> tokens.<br>Y el servidor lee <span class="cifra">16.386</span>.<br>Sin avisar.</h1>
+    <p class="entrada">Pruebas de modelos de lenguaje en una máquina de casa: cifras con fecha, el comando que las
+      sacó, y lo que se rompió por el camino. Cuando algo no se pudo medir, aquí se dice.</p>
+
+    <div class="ventana">
+      <svg viewBox="0 0 680 150" role="img" aria-label="Ventana de 32.768 tokens: 16.382 se tiran por la cabecera, 16.386 llegan al modelo">
+        <defs>
+          <linearGradient id="lleno" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffc266"/><stop offset="1" stop-color="#c2410c"/>
+          </linearGradient>
+          <filter id="brillo" x="-30%" y="-60%" width="160%" height="260%">
+            <feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <text x="4" y="14" font-family="ui-monospace,monospace" font-size="10" fill="#77808d" letter-spacing="1.4">LO QUE SE TIRA · LA CABECERA</text>
+        <text x="676" y="14" text-anchor="end" font-family="ui-monospace,monospace" font-size="10" fill="#f0a63c" letter-spacing="1.4">LO QUE LLEGA AL MODELO</text>
+        <rect x="4" y="24" width="672" height="44" rx="10" fill="rgba(255,255,255,.04)" stroke="#2a3240"/>
+        <rect x="230" y="24" width="230" height="44" rx="10" fill="url(#lleno)" opacity=".22"/>
+        <rect x="230" y="24" width="230" height="44" rx="10" fill="none" stroke="#f0a63c" stroke-width="1.5" filter="url(#brillo)" opacity=".75"/>
+        <text x="117" y="51" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#77808d">16 382</text>
+        <text x="345" y="51" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" font-weight="700" fill="#ffc266">16 386</text>
+        <line x1="4" y1="92" x2="676" y2="92" stroke="#222932"/>
+        <text x="4" y="112" font-family="ui-monospace,monospace" font-size="11" fill="#77808d">num_ctx = 32 768 · la ventana que crees tener</text>
+        <line x1="4" y1="126" x2="676" y2="126" stroke="#222932"/>
+        <text x="4" y="144" font-family="ui-monospace,monospace" font-size="11" fill="#77808d">prompt_eval_count = 16 386 · sin error · done_reason = stop</text>
+      </svg>
+    </div>
+
+    <div class="acciones">
+      <a class="principal" href="01-ollama-truncado-silencioso.html">Leer la última medida</a>
+      <a class="secundario" href="#articulos">Ver los cinco artículos</a>
+    </div>
+
+    <div class="franja">
+      <span><b>5</b> artículos</span>
+      <span><b class="ambar">16.386</b> tokens leídos de 32.768</span>
+      <span><b>4</b> combinaciones medidas</span>
+      <span><b>0</b> avisos del servidor</span>
+    </div>
+  </div>
+</header>
+
+<section id="articulos">
+  <div class="cabeza-seccion">
+    <h2>Lo que hay medido</h2>
+    <p>cada pieza con su comando</p>
+    <a class="mas" href="#">ver todos →</a>
+  </div>
+  <ul class="rejilla" style="list-style:none;padding:0;margin:0 auto">
+    <li class="tarjeta"><span class="n">05</span><h3><a href="01-ollama-truncado-silencioso.html">Ollama te deja media ventana de contexto y no te dice cuál es la otra mitad</a></h3><p>Cuatro combinaciones de versión y configuración, y las cuatro dan el mismo número.</p><p class="pie"><span>2026-11-19</span><span>8 min</span></p></li>
+    <li class="tarjeta"><span class="n">04</span><h3><a href="05-el-parche-que-arregla-dos-y-estropea-dos.html">El parche que arregla dos casos y estropea otros dos</a></h3><p>Leer el razonamiento como si fuera la respuesta: dos mejoraron y dos empeoraron.</p><p class="pie"><span>2026-11-19</span><span>8 min</span></p></li>
+    <li class="tarjeta"><span class="n">03</span><h3><a href="02-razonamiento-apagado.html">Apagar el razonamiento cuesta 12 aciertos, no te hace más rápido</a></h3><p>El mismo modelo, el mismo banco, la misma máquina: con razonamiento 45/48, sin él 33/48.</p><p class="pie"><span>2026-11-17</span><span>3 min</span></p></li>
+    <li class="tarjeta"><span class="n">02</span><h3><a href="03-el-mejor-modelo-que-tiramos.html">El modelo que dimos por malo era el mejor</a></h3><p>Medí con la banda equivocada. Tres veces el mismo error en un día.</p><p class="pie"><span>2026-11-17</span><span>3 min</span></p></li>
+    <li class="tarjeta"><span class="n">01</span><h3><a href="04-archivo-de-lo-comun.html">El archivo de lo común existe. Y el modelo distingue mucho peor un eccema que un tumor</a></h3><p>3.061 casos con diagnóstico de dermatólogo, medidos por otro camino.</p><p class="pie"><span>2026-11-17</span><span>2 min</span></p></li>
+  </ul>
+</section>
+
+<section id="metodo" style="border-top:1px solid var(--linea)">
+  <div class="cabeza-seccion">
+    <h2>Cómo se mide aquí</h2>
+    <p>y cómo se corrige</p>
+  </div>
+  <div class="rejilla" style="grid-template-columns:1fr">
+    <div style="max-width:52rem;margin:0 auto;color:var(--tenue)">
+      <p style="color:var(--tinta);font-size:1.05rem">Todo lo que hay aquí salió de un banco de pruebas que se puede repetir. Los números llevan su fecha, su versión y el comando.</p>
+      <p>Cuando un número salió mal, se corrige en público y se explica de dónde venía el error: en este taller ya pasó dos veces, y las dos están escritas.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="dentro">
+    <span>Texto bajo <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>.</span>
+    <span>El Taller · taller.dantehef.dev · sin JavaScript, sin fuentes ni imágenes de fuera</span>
+  </div>
+</footer>
+
+</body>
+</html>

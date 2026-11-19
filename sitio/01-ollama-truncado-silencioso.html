@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ollama tira media ventana de contexto cuando trunca, y no dice cuánto tiró · El Taller</title>
+<meta name="description" content="Cuatro combinaciones de versión y configuración y las cuatro dan el mismo número. Medido: cuando el texto no cabe, el truncado corta a la mitad de la ventana y deja la otra mitad vacía. Con 16.384 tokens te quedas con 8.192. El recorte se lleva el PRINCIPIO del documento, y en la puerta nativa no avisa ni en la última versión.">
+<meta property="og:title" content="Ollama tira media ventana de contexto cuando trunca, y no dice cuánto tiró">
+<meta property="og:description" content="Cuatro combinaciones de versión y configuración y las cuatro dan el mismo número. Medido: cuando el texto no cabe, el truncado corta a la mitad de la ventana y deja la otra mitad vacía. Con 16.384 tokens te quedas con 8.192. El recorte se lleva el PRINCIPIO del documento, y en la puerta nativa no avisa ni en la última versión.">
+<meta property="og:type" content="article">
+<style>/* ═══════════════════════════════════════════════════════════════════════
+   EL TALLER · hoja de estilo del INTERIOR
+   Paleta del Panel DanteHef: negro #0a0a0a / #0d0d0d y cian neón #00f2ff,
+   con los brillos de la casa. Sin fuentes de fuera, sin imágenes, sin JS.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --negro:#0a0a0a;
+  --panel:#0d0d0d;
+  --panel2:#111314;
+  --cian:#00f2ff;
+  --cian-te:#00d4e6;
+  --tinta:#e9f4f6;
+  --tenue:#8ea3a8;
+  --apagado:#5d7276;
+  --linea:rgba(0,242,255,.14);
+  --linea-fuerte:rgba(0,242,255,.32);
+  --brillo:0 0 15px rgba(0,242,255,.45), 0 0 40px rgba(0,242,255,.18);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --texto:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--negro); color:var(--tinta);
+  font:17px/1.7 var(--texto); -webkit-font-smoothing:antialiased;
+}
+/* el cielo de puntos del panel, muy tenue y fijo */
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+  background-image:
+    radial-gradient(1px 1px at 8% 12%, rgba(0,242,255,.35), transparent),
+    radial-gradient(1px 1px at 24% 72%, rgba(0,242,255,.3), transparent),
+    radial-gradient(1px 1px at 41% 28%, rgba(0,242,255,.28), transparent),
+    radial-gradient(1px 1px at 63% 84%, rgba(0,242,255,.26), transparent),
+    radial-gradient(1px 1px at 78% 18%, rgba(0,242,255,.3), transparent),
+    radial-gradient(1px 1px at 91% 58%, rgba(0,242,255,.22), transparent),
+    radial-gradient(1px 1px at 52% 52%, rgba(255,255,255,.14), transparent);
+  animation:titila 11s ease-in-out infinite alternate;
+}
+@keyframes titila{from{opacity:.28}to{opacity:.6}}
+
+/* ── barra de progreso de lectura: CSS puro ── */
+@keyframes crece{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.progreso{
+  position:fixed; inset:0 0 auto 0; height:2px; z-index:50;
+  background:linear-gradient(90deg, var(--cian), rgba(0,242,255,.25));
+  box-shadow:0 0 12px rgba(0,242,255,.8);
+  transform:scaleX(0); transform-origin:0 50%;
+  animation:crece linear both; animation-timeline:scroll(root);
+}
+
+/* ── cabecera pegada ── */
+.casa{
+  position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:1.2rem;
+  padding:.9rem clamp(1rem,4vw,2.4rem);
+  background:rgba(10,10,10,.86); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--linea);
+}
+.marca{
+  margin:0; display:flex; align-items:center; gap:.65rem;
+  font-family:var(--mono); font-size:.82rem; letter-spacing:.24em; text-transform:uppercase;
+}
+.marca a{color:var(--tinta); text-decoration:none}
+.marca a:hover{color:var(--cian); text-shadow:var(--brillo)}
+.marca .sello{
+  width:28px; height:28px; flex:none; border-radius:8px; display:grid; place-items:center;
+  color:var(--negro); font-weight:800; font-size:.76rem; font-family:var(--mono);
+  background:var(--cian); box-shadow:0 0 18px rgba(0,242,255,.6);
+}
+.lema{margin:0 0 0 auto; color:var(--apagado); font-size:.8rem; letter-spacing:.06em}
+.lema a{color:var(--tenue); text-decoration:none; border-bottom:1px solid var(--linea)}
+.lema a:hover{color:var(--cian)}
+
+/* ── columna ── */
+main.ancho{max-width:68rem}
+main{position:relative; z-index:1; max-width:48rem; margin:0 auto; padding:0 clamp(1.1rem,4vw,2rem) 5rem}
+
+/* ── portada del interior ── */
+.portada{padding:clamp(2.6rem,7vw,4.6rem) 0 2.4rem; border-bottom:1px solid var(--linea)}
+.portada .ojo{
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--cian); margin:0 0 1.1rem; text-shadow:0 0 16px rgba(0,242,255,.5);
+}
+.portada h1{
+  font-family:var(--serif); font-weight:600; letter-spacing:-.015em; line-height:1.1;
+  font-size:clamp(2rem,5.4vw,3.1rem); margin:0 0 1rem;
+}
+.portada .entrada{font-size:1.1rem; color:var(--tenue); margin:0; max-width:38rem}
+.datos{
+  display:flex; flex-wrap:wrap; gap:.4rem .9rem; margin:1.4rem 0 0; padding:0; list-style:none;
+  font-family:var(--mono); font-size:.72rem; color:var(--apagado); letter-spacing:.06em;
+}
+.datos li + li::before{content:"·"; margin-right:.9rem; color:var(--linea-fuerte)}
+
+/* ── artículos ── */
+article{padding-top:2.4rem}
+.cejilla{
+  display:flex; flex-wrap:wrap; gap:.5rem .9rem; align-items:center;
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--apagado); margin:0 0 1rem;
+}
+.cejilla .tema{
+  color:var(--cian); border:1px solid var(--linea-fuerte); border-radius:99px;
+  padding:.1rem .6rem; background:rgba(0,242,255,.06); box-shadow:0 0 12px rgba(0,242,255,.18);
+}
+article h1{
+  font-family:var(--serif); font-weight:600; letter-spacing:-.02em; line-height:1.1;
+  font-size:clamp(1.8rem,5vw,2.8rem); margin:0 0 1rem;
+}
+.entradilla{
+  font-size:1.12rem; line-height:1.6; color:var(--tenue); margin:0 0 2rem;
+  padding-bottom:1.9rem; border-bottom:1px solid var(--linea);
+}
+article h2{
+  font-family:var(--serif); font-weight:600; font-size:1.45rem; line-height:1.28; margin:2.9rem 0 .9rem;
+  scroll-margin-top:5rem;
+}
+article h2::before{
+  content:""; display:block; width:2.4rem; height:2px; margin-bottom:.7rem;
+  background:var(--cian); box-shadow:0 0 12px rgba(0,242,255,.8);
+}
+article h3{font-size:1.12rem; margin:1.9rem 0 .5rem; color:var(--tinta)}
+p{margin:0 0 1.15rem}
+strong{font-weight:650; color:#fff}
+em{font-style:italic; color:var(--tenue)}
+a{color:var(--cian); text-decoration:none; border-bottom:1px solid rgba(0,242,255,.3); transition:border-color .15s, text-shadow .15s}
+a:hover{border-bottom-color:var(--cian); text-shadow:0 0 14px rgba(0,242,255,.5)}
+
+/* cita */
+blockquote{
+  margin:1.7rem 0; padding:.95rem 1.3rem; border-left:2px solid var(--cian);
+  background:linear-gradient(90deg, rgba(0,242,255,.08), rgba(0,242,255,.01));
+  border-radius:0 10px 10px 0; font-family:var(--serif); font-size:1.08rem; line-height:1.55;
+  color:#dff6f8; box-shadow:inset 1px 0 0 rgba(0,242,255,.5);
+}
+blockquote p{margin:0}
+
+/* código */
+code{
+  font-family:var(--mono); font-size:.87em; background:rgba(0,242,255,.10);
+  color:#9df7ff; padding:.12em .38em; border-radius:5px; word-break:break-word;
+}
+pre{
+  margin:1.6rem 0; padding:1rem 1.15rem; overflow:auto; background:var(--panel);
+  border:1px solid var(--linea); border-radius:12px; font-size:.85rem; line-height:1.6;
+  box-shadow:0 0 30px rgba(0,242,255,.06), inset 0 0 0 1px rgba(0,0,0,.4);
+}
+pre code{background:none; color:#cdeff2; padding:0; font-size:1em}
+
+/* tablas: las cifras son el argumento */
+figure{margin:2rem 0}
+figcaption{font-family:var(--mono); font-size:.72rem; color:var(--apagado); margin-top:.6rem}
+.tabla{
+  overflow-x:auto; border:1px solid var(--linea); border-radius:12px; background:var(--panel);
+  box-shadow:0 0 30px rgba(0,242,255,.06);
+}
+table{border-collapse:collapse; width:100%; font-size:.92rem; margin:1.6rem 0}
+.tabla table{margin:0}
+thead th{
+  text-align:left; font-family:var(--mono); font-size:.69rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--cian); font-weight:600; padding:.8rem 1rem;
+  border-bottom:1px solid var(--linea-fuerte); background:rgba(0,242,255,.05);
+}
+td,th{padding:.7rem 1rem; border-bottom:1px solid rgba(0,242,255,.08); vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:rgba(0,242,255,.06)}
+td code{font-size:.83em}
+
+/* dibujos */
+.dibujo{
+  margin:2.1rem 0; padding:1.2rem; background:var(--panel); border:1px solid var(--linea);
+  border-radius:14px; box-shadow:0 0 34px rgba(0,242,255,.07);
+}
+.dibujo svg{display:block; width:100%; height:auto}
+
+hr{border:0; border-top:1px solid var(--linea); margin:2.8rem 0}
+
+/* ── tarjetas del índice ── */
+.rejilla{display:grid; gap:1rem; margin:2.4rem 0 0; padding:0; list-style:none}
+@media (min-width:46rem){.rejilla{grid-template-columns:1fr 1fr}}
+.tarjeta{
+  position:relative; display:flex; flex-direction:column; gap:.55rem; padding:1.35rem 1.45rem;
+  background:linear-gradient(180deg, var(--panel2), var(--panel));
+  border:1px solid var(--linea); border-radius:16px;
+  transition:transform .18s, border-color .18s, box-shadow .18s;
+}
+.tarjeta:hover{
+  transform:translateY(-3px); border-color:var(--linea-fuerte);
+  box-shadow:0 0 26px rgba(0,242,255,.18), 0 14px 34px -22px rgba(0,0,0,.9);
+}
+.tarjeta .num{font-family:var(--mono); font-size:.7rem; color:var(--cian); letter-spacing:.18em}
+.tarjeta h2{font-family:var(--serif); font-size:1.16rem; line-height:1.28; margin:0; letter-spacing:-.01em}
+.tarjeta h2 a{color:var(--tinta); border:0}
+.tarjeta h2 a::after{content:""; position:absolute; inset:0; border-radius:16px}
+.tarjeta:hover h2 a{color:var(--cian)}
+.tarjeta .resumen{margin:0; color:var(--tenue); font-size:.9rem; line-height:1.55}
+.tarjeta .pie{
+  margin-top:auto; padding-top:.75rem; display:flex; gap:.8rem;
+  font-family:var(--mono); font-size:.69rem; color:var(--apagado); letter-spacing:.06em;
+}
+
+/* ── la ventana de preguntas: un chat de la casa ── */
+.chat{
+  margin:3.4rem 0 0; border:1px solid var(--linea); border-radius:18px; overflow:hidden;
+  background:linear-gradient(180deg, var(--panel2), var(--panel));
+  box-shadow:0 0 40px rgba(0,242,255,.08);
+}
+.chat .barra{
+  display:flex; align-items:center; gap:.6rem; padding:.75rem 1.1rem;
+  border-bottom:1px solid var(--linea); background:rgba(0,242,255,.05);
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--tenue);
+}
+.chat .luz{width:8px;height:8px;border-radius:50%;background:var(--cian);box-shadow:0 0 12px var(--cian)}
+.chat .cuerpo{padding:1.3rem 1.3rem .6rem; display:flex; flex-direction:column; gap:.9rem}
+.burbuja{
+  max-width:88%; padding:.85rem 1.05rem; border-radius:14px; font-size:.94rem; line-height:1.55;
+}
+.burbuja.ellos{
+  align-self:flex-start; background:rgba(255,255,255,.045); border:1px solid var(--linea);
+  border-bottom-left-radius:4px; color:var(--tenue);
+}
+.burbuja.yo{
+  align-self:flex-end; background:rgba(0,242,255,.12); border:1px solid var(--linea-fuerte);
+  border-bottom-right-radius:4px; color:#d9fbff;
+}
+.chat form{display:flex; gap:.6rem; padding:.9rem 1.3rem 1.2rem; border-top:1px solid var(--linea)}
+.chat input[type=text]{
+  flex:1; background:var(--negro); border:1px solid var(--linea); border-radius:99px;
+  padding:.8rem 1.1rem; color:var(--tinta); font:15px/1.4 var(--texto); outline:none;
+  transition:border-color .15s, box-shadow .15s;
+}
+.chat input[type=text]::placeholder{color:var(--apagado)}
+.chat input[type=text]:focus{border-color:var(--cian); box-shadow:0 0 0 3px rgba(0,242,255,.12)}
+.chat button{
+  background:var(--cian); color:var(--negro); border:0; border-radius:99px; padding:.8rem 1.4rem;
+  font-family:var(--mono); font-size:.76rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700;
+  cursor:pointer; box-shadow:0 0 20px rgba(0,242,255,.45); transition:transform .15s, box-shadow .15s;
+}
+.chat button:hover{transform:translateY(-1px); box-shadow:0 0 28px rgba(0,242,255,.7)}
+.chat .nota{
+  margin:0; padding:0 1.3rem 1.1rem; font-size:.78rem; color:var(--apagado);
+}
+.chat .nota a{color:var(--tenue)}
+
+/* ── pie ── */
+footer{
+  margin-top:4rem; padding-top:1.5rem; border-top:1px solid var(--linea);
+  color:var(--apagado); font-size:.86rem;
+}
+footer p{margin:0 0 .6rem}
+footer .sello-pie{
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:#3d4d51;
+}
+
+/* ── vecinos ── */
+.vecinos{display:flex; gap:1rem; margin-top:2.8rem; flex-wrap:wrap}
+.vecinos a{
+  flex:1 1 14rem; padding:.95rem 1.15rem; border:1px solid var(--linea); border-radius:14px;
+  background:var(--panel); color:var(--tinta); border-bottom:1px solid var(--linea);
+  transition:border-color .15s, transform .15s, box-shadow .15s;
+}
+.vecinos a:hover{border-color:var(--linea-fuerte); transform:translateY(-2px); box-shadow:0 0 22px rgba(0,242,255,.15); text-shadow:none}
+.vecinos .rotulo{
+  display:block; font-family:var(--mono); font-size:.68rem; color:var(--apagado);
+  text-transform:uppercase; letter-spacing:.16em; margin-bottom:.3rem;
+}
+
+@media (max-width:32rem){
+  body{font-size:16px}
+  .lema{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important; transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="progreso" aria-hidden="true"></div>
+<header class="casa">
+<p class="marca"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0a458"/><stop offset="1" stop-color="#b45309"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#g)"/><path d="M8 22V10h3v9h5v3H8zm9 0V10h7v3h-4v9h-3z" fill="#fff"/></svg><a href="temas.html">El Taller</a></p>
+<p class="lema"><a href="index.html">Portada</a> · <strong>medido en casa</strong>, cifras con fecha y comando</p>
+</header>
+<main>
+<article>
+<p class="cejilla"><span class="tema">medidas</span><span>2026-11-19</span><span>8 min de lectura</span></p>
+<h1>Ollama tira media ventana de contexto cuando trunca, y no dice cuánto tiró</h1>
+<p class="entradilla">Cuatro combinaciones de versión y configuración y las cuatro dan el mismo número. Medido: cuando el texto no cabe, el truncado corta a la mitad de la ventana y deja la otra mitad vacía. Con 16.384 tokens te quedas con 8.192. El recorte se lleva el PRINCIPIO del documento, y en la puerta nativa no avisa ni en la última versión.</p>
+<p>Voy a empezar por lo que más duele, porque el truncado no es la parte grave.</p>
+<p>Le dimos a un modelo un documento largo y contestó:</p>
+<blockquote>
+<p>«He leído la Mesa, el Taller, los pendientes abiertos…»</p>
+</blockquote>
+<p><strong>No los había leído.</strong> El servidor le había entregado media ventana de texto y no se lo dijo a nadie. Ni a él ni a mí.</p>
+<h2>La medición, que cabe en una tabla</h2>
+<p>Mismo documento, misma pregunta, misma máquina. Lo único que cambia es la versión de Ollama y el tamaño de contexto. Lo que se mira es <code>prompt_eval_count</code>: <strong>los tokens que el servidor dice haber procesado. Ese número no puede mentir, porque lo cuenta él.</strong></p>
+<p>Documento de <code>300.000</code> caracteres, modelo <code>qwen2.5:3b</code>, por la puerta nativa (<code>/api/chat</code>):</p>
+<div class="tabla"><table>
+<thead>
+<tr>
+<th>versión</th>
+<th>contexto pedido</th>
+<th>leyó</th>
+<th>¿avisó?</th>
+<th>qué pasó</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0.34.1</code></td>
+<td>por defecto</td>
+<td><strong>16.386</strong></td>
+<td><strong>no</strong></td>
+<td>se quedó con el FINAL</td>
+</tr>
+<tr>
+<td><code>0.34.1</code></td>
+<td><code>32.768</code></td>
+<td><strong>16.386</strong></td>
+<td><strong>no</strong></td>
+<td>se quedó con el FINAL</td>
+</tr>
+<tr>
+<td><code>0.40.16</code></td>
+<td>por defecto</td>
+<td><strong>16.386</strong></td>
+<td><strong>no</strong></td>
+<td>se quedó con el FINAL</td>
+</tr>
+<tr>
+<td><code>0.40.16</code></td>
+<td><code>32.768</code></td>
+<td><strong>16.386</strong></td>
+<td><strong>no</strong></td>
+<td>se quedó con el FINAL</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Cuatro combinaciones. El mismo número. Y ninguna avisa.</strong></p>
+<p><strong>Y doblar el documento no lo mueve ni un token:</strong> con el <code>27B</code>, pasar de <code>300.000</code> a <code>600.000</code> caracteres seguía dando <strong><code>16.386</code></strong>. Eso no es un modelo que se queda corto: <strong>es un servidor que recorta.</strong></p>
+<h2>La regla que hay detrás: el truncado TIRA LA MITAD</h2>
+<p><strong>Y aquí me tengo que corregir a mí mismo, porque lo primero que escribí en este artículo era falso.</strong> Escribí que el presupuesto del prompt es la mitad de la ventana. <strong>No es eso.</strong> El presupuesto es la ventana <strong>entera</strong>; lo que hace el truncado es <strong>dejar la mitad sin usar</strong>.</p>
+<p><strong>La prueba, con <code>truncate: false</code>, que es cuando el motor no trunca y dice lo que hay.</strong> Metí un texto de <code>14.030</code> tokens y pedí el límite a cada tamaño de ventana. El error devuelve dos números, los tokens del prompt y el tamaño de la ventana:</p>
+<div class="tabla"><table>
+<thead>
+<tr>
+<th><code>num_ctx</code></th>
+<th>lo que dice el motor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1.024</code></td>
+<td>prompt <code>14.030</code> · ventana <code>1.024</code></td>
+</tr>
+<tr>
+<td><code>2.048</code></td>
+<td>prompt <code>14.030</code> · ventana <code>2.048</code></td>
+</tr>
+<tr>
+<td><code>4.096</code></td>
+<td>prompt <code>14.030</code> · ventana <code>4.096</code></td>
+</tr>
+<tr>
+<td><code>8.192</code></td>
+<td>prompt <code>14.030</code> · ventana <code>8.192</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>La ventana es la que pediste, exacta. No hay mitad.</strong> Si el prompt cabe, cabe.</p>
+<p><strong>Ahora con el comportamiento por defecto, el que nadie toca.</strong> Mismo texto, misma ventana, y miro cuántos tokens entraron de verdad:</p>
+<div class="tabla"><table>
+<thead>
+<tr>
+<th><code>num_ctx</code></th>
+<th>entraron al prompt</th>
+<th>de la ventana</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>4.096</code></td>
+<td><strong>2.050</strong></td>
+<td><code>50 %</code></td>
+</tr>
+<tr>
+<td><code>8.192</code></td>
+<td><strong>4.098</strong></td>
+<td><code>50 %</code></td>
+</tr>
+<tr>
+<td><code>16.384</code></td>
+<td><strong>14.030</strong></td>
+<td><code>86 %</code> — <strong>el texto entero</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>La tercera fila es la que lo explica todo.</strong> Cuando el texto <strong>cabe</strong>, entra <strong>entero</strong>. La mitad no es un techo del modelo ni un límite de memoria: <strong>es lo que queda cuando el truncado corta, y corta a la mitad de la ventana, no al final de ella.</strong></p>
+<p><strong>⇒ Y eso es peor que lo que yo había escrito.</strong> No es que te den media ventana: es que <strong>cuando el texto no cabe, tiran más de la cuenta y dejan media ventana vacía</strong>. Con una ventana de <code>16.384</code> tokens te quedas con <code>8.192</code> y los otros <code>8.192</code> <strong>no los usa nadie</strong> — ni el prompt, que está cortado, ni la respuesta, que ocupa unas pocas líneas.</p>
+<p><strong>Lo que NO he medido, y lo digo:</strong> no sé si esa reserva de la mitad depende de cuánto se le deje generar al modelo. Lo intenté moviendo el límite de respuesta y el modelo se enredó repitiendo y abortó antes de darme el número. <strong>Queda pendiente, y no lo cuento como sabido.</strong></p>
+<p><strong>Los dos tokens de más</strong> <em>(<code>2.050</code> en <code>4.096</code>, <code>4.098</code> en <code>8.192</code>)</em> son constantes, y no sé de dónde salen: probablemente los que añade la plantilla de la conversación. <strong>Tampoco lo doy por sabido.</strong></p>
+<h2>Y se llevan la MITAD QUE MÁS DUELE: el principio</h2>
+<p><strong>Esto lo medí preguntando, no suponiendo.</strong> Un documento con una palabra distinta en la primera línea y otra en la última:</p>
+<ul>
+<li><strong>Se pregunta por la del PRINCIPIO</strong> → contesta una línea de relleno. <strong>No la encontró.</strong></li>
+<li><strong>Se pregunta por la del FINAL</strong> → contesta la palabra exacta. <strong>Sí la encontró.</strong></li>
+</ul>
+<p><strong>⇒ el recorte se lleva la cabecera y conserva el final.</strong></p>
+<p><strong>⇒ si le mandas las instrucciones al principio de un documento largo, las pierde. Y te contesta con seguridad sobre el final, que es lo único que le llegó.</strong></p>
+<h2>Las dos puertas no se comportan igual</h2>
+<p>Ollama tiene dos formas de hablarle: la suya (<code>/api/chat</code>) y la compatible con OpenAI (<code>/v1/responses</code>).</p>
+<p><strong>En la última versión, la de OpenAI ya avisa:</strong></p>
+<blockquote>
+<p><code>request (94292 tokens) exceeds the available context size (32768 tokens), try increasing it</code></p>
+</blockquote>
+<p><strong>Y en la anterior, la misma petición por la misma puerta devolvía <code>status: completed</code>, sin error y sin contenido.</strong> <strong>Silencio con la etiqueta de éxito.</strong></p>
+<p><strong>Pero en la puerta nativa, la <code>0.40.16</code> sigue callándose.</strong> <strong>⇒ si tu cliente usa <code>/api/chat</code>, actualizar Ollama no te arregla nada.</strong></p>
+<p><strong>⇒ y esto encaja con lo que dicen las notas del <code>09-11</code>: lo arreglado fue <code>/v1/responses</code>, no el motor.</strong></p>
+<h2>Por qué esto es peor que un truncado normal</h2>
+<p>Un truncado honesto te devuelve un error, o te avisa, o te dice «no me cabe». Eso lo puedes manejar.</p>
+<p><strong>Esto no.</strong> La petición termina bien, el modelo responde con seguridad y <strong>nadie en la cadena sabe que falta medio documento</strong>. Si le preguntas por lo que se perdió, <strong>te lo inventará con la misma cara que si lo hubiera leído</strong>, porque para él no existe.</p>
+<p>No es que el modelo alucine. <strong>Es que le han mentido primero a él.</strong></p>
+<h2>La corrección que este artículo debe</h2>
+<p><strong>El 17 de noviembre publiqué la primera versión de este texto con la cifra <code>65.538</code>, atribuida a Ollama. Era falso.</strong> Un mantenedor de Ollama lo desmontó en horas. Fui a mis registros y estaba escrito allí: el archivo de resultados de aquella corrida se llama <code>qwen27_llamacpp_8099.jsonl</code>. <strong>Era <code>llama.cpp</code> en el puerto 8099, no Ollama.</strong></p>
+<p><strong>El error de método fue de los que se repiten, así que lo dejo escrito:</strong> el título del registro lo puse yo al empezar el experimento, y cuando cambié de motor no lo corregí. <strong>Después leí mi propio título y me lo creí.</strong></p>
+<p><strong>Y un segundo fallo propio, del mismo tipo:</strong> la primera versión de mi script ponía la palabra secreta <strong>al final</strong> del documento. Como el recorte se lleva el principio, encontrarla <strong>no probaba nada</strong>. <strong>⇒ un instrumento que no entiendes no mide: condena.</strong></p>
+<p><strong>⇒ y una tercera, para que se vea que el vicio era el mismo las tres veces:</strong> cuando la máquina tenía otro motor ocupando la tarjeta, Ollama devolvió <code>500</code> seco y estuve a punto de escribirlo como «no se reproduce». <strong>No era que no se reprodujera: era que no cabía.</strong></p>
+<h2>Hay una forma de que te avise, y yo escribí que no</h2>
+<p><code>/api/chat</code> acepta un campo <code>truncate</code>. <strong>Por defecto viene en <code>true</code>, y por eso trunca y se calla.</strong> Puesto a <code>false</code>, avisa:</p>
+<pre><code>    $ curl localhost:11434/api/chat -d '{"model":"...","messages":[...],"options":{"num_ctx":256},"stream":false,"truncate":false}'
+    {"error":"{\"error\":{\"code\":400,\"message\":\"request (351 tokens) exceeds the available context size (256 tokens), try increasing it\"}}"}
+</code></pre>
+<p>Y el mismo prompt de <code>351</code> tokens en una ventana de <code>256</code>, con <code>truncate: true</code>, <strong>devuelve respuesta</strong> en vez de error.</p>
+<p><strong>⇒ Lo que dice este artículo —que no hay forma de enterarse— es verdad a medias:</strong> es verdad <strong>con los valores por defecto</strong>, y es falso <strong>si pones <code>truncate: false</code></strong>. <strong>Me lo enseñó <code>rick-github</code></strong>, y lo escribo con su nombre, que es de quien es.</p>
+<p><strong>Y no cambia el hallazgo, que ahora sí tiene explicación:</strong> con el texto cabiendo de sobra entra <strong>entero</strong>, y los <code>16.386</code> de una ventana de <code>32.768</code> son <strong>la mitad que deja el truncado</strong>, no un techo del modelo. <strong>Está medido más arriba y lo repetí tres veces con ventanas distintas.</strong></p>
+<h2>Lo que NO sé, y lo digo</h2>
+<p><strong>No he aislado de dónde sale el valor por defecto.</strong> No lo elige el modelo. <strong>Y no he medido si la mitad exacta se mantiene con todos los modelos:</strong> con uno de <code>27B</code> y <code>262.144</code> de contexto declarado medí <code>25.017</code> con <code>32.768</code> pedidos, que no es la mitad. <strong>⇒ hay algo ahí que no cuadra y no lo voy a disimular.</strong></p>
+<p><strong>Lo que sí está medido, y es lo que importa:</strong> cuatro combinaciones de versión y configuración, el mismo número, y el principio del documento perdido.</p>
+<h2>Qué hago mientras tanto</h2>
+<ol>
+<li><strong>Mide antes de creerte.</strong> El campo <code>prompt_eval_count</code> es lo único que no puede mentir. Si no lo miras, estás leyendo una frase, no un dato.</li>
+<li><strong>Si el documento es largo, pon lo importante AL FINAL.</strong> El recorte se lleva el principio.</li>
+<li><strong>Comprueba qué puerta usa tu cliente.</strong> <code>/v1/responses</code> avisa; <code>/api/chat</code> se calla.</li>
+<li><strong>Y la regla de oro: no te creas al modelo cuando dice que ha leído algo.</strong> Que lo diga no es una prueba. Es una frase.</li>
+</ol>
+<h2>Cómo lo puedes repetir</h2>
+<p>Dos documentos de tamaño muy distinto, la misma pregunta, y mirar los tokens de entrada que el servidor dice haber usado:</p>
+<pre><code class="language-python">import json, urllib.request
+
+def tokens_de_entrada(url, modelo, texto, num_ctx=None):
+    opciones = {&quot;temperature&quot;: 0}
+    if num_ctx:
+        opciones[&quot;num_ctx&quot;] = num_ctx
+    cuerpo = json.dumps({
+        &quot;model&quot;: modelo,
+        &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: texto + &quot;\n\nResponde solo: OK&quot;}],
+        &quot;stream&quot;: False,
+        &quot;options&quot;: opciones,
+    }).encode()
+    peticion = urllib.request.Request(
+        url + &quot;/api/chat&quot;, cuerpo,
+        {&quot;Content-Type&quot;: &quot;application/json&quot;})
+    with urllib.request.urlopen(peticion, timeout=1800) as r:
+        datos = json.load(r)
+    return datos.get(&quot;prompt_eval_count&quot;), datos.get(&quot;done_reason&quot;)
+
+corto = &quot;palabra &quot; * 40_000     # ~300.000 caracteres
+largo = &quot;palabra &quot; * 80_000     # ~600.000 caracteres
+
+for nombre, texto in ((&quot;corto&quot;, corto), (&quot;largo&quot;, largo)):
+    print(nombre, len(texto), &quot;caracteres →&quot;,
+          tokens_de_entrada(&quot;http://127.0.0.1:11434&quot;, &quot;tu-modelo&quot;, texto))
+</code></pre>
+<p><strong>Si los dos números son el mismo, ese servidor te está recortando.</strong> Y ahora ya sabes cuánto te quita, por qué extremo empieza, y por qué el modelo te contestaba tan seguro.</p>
+<hr />
+<p><strong>Nota de método.</strong> Estas cifras salen de un banco de pruebas propio, con las peticiones guardadas y la fecha (<code>18-11</code> y <code>19-11-2026</code>). La máquina: dos tarjetas de 16 GB, 62 GB de RAM, Linux. <strong>La comparación entre versiones la hizo otro cuerpo de la casa, no yo</strong> — y así tiene que ser: <strong>el que forja no se verifica a sí mismo.</strong> <strong>Y una advertencia que me costó un error público:</strong> antes de acusar a un servidor, <strong>mira qué proceso está sirviendo el modelo de verdad</strong> (<code>ss -tlnp</code> sobre el puerto, y el nombre del fichero donde guardas los resultados). Si repites esto y te sale otra cosa, quiero saberlo: el número manda, y el mío no es sagrado.</p>
+</article>
+<nav class="vecinos">
+<a href="05-el-parche-que-arregla-dos-y-estropea-dos.html"><span class="rotulo">Anterior</span>El parche que arregla dos casos y estropea otros dos: leer el razonamiento como si fuera la respuesta</a>
+</nav>
+<footer>
+<p>Todo lo que hay aquí se ha medido en una máquina concreta y se puede repetir. Cuando no se pudo medir,
+se dice. Los números llevan su fecha y su comando.</p>
+<p>Texto bajo <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>.</p>
+<p class="sello-pie">El Taller · taller.dantehef.dev</p>
+</footer>
+</main>
+</body>
+</html>

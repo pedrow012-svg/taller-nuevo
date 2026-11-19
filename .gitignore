@@ -1,0 +1,4 @@
+# Nada de temporales ni de construcciones intermedias
+*.tmp
+*.log
+__pycache__/
